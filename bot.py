@@ -2,7 +2,6 @@ import asyncio
 import os
 import discord
 
-from extension import *
 from dotenv import load_dotenv
 from yt_dlp import YoutubeDL
 from discord import app_commands, FFmpegPCMAudio
