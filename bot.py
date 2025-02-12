@@ -13,6 +13,7 @@ load_dotenv()
 token = os.getenv("DISCORD_TOKEN")
 queue = []
 song_queue = []
+pos = 0
 
 class MyClient(discord.Client):
     async def on_ready(self):
@@ -55,7 +56,6 @@ class MyClient(discord.Client):
                             info = ydl.extract_info(url, download=False)
                             audio_url = info["url"]
                             title = info["title"]
-                            duration = info["duration"]
                     else:
                         search = Search(url)
                         results = search.results
@@ -65,11 +65,10 @@ class MyClient(discord.Client):
                             info = ydl.extract_info(first.watch_url, download=False)
                             audio_url = info["url"]
                             title = info["title"]
-                            duration = info["duration"]
 
                     source = FFmpegPCMAudio(audio_url, **FFMPEG_OPTIONS)
-                    queue.append([title, duration])
-                    song_queue.append(source)
+                    queue.append(title)
+                    song_queue.append([source, title])
 
                     # funcao intermediaria para chamar next_song. o after n aceita funcoes assincronas, logo, precisa de uma funcao intermediaria usando run_coroutine_threadsafe
                     # para chamar uma funcao assincrona onde n daria
@@ -84,12 +83,21 @@ class MyClient(discord.Client):
                         if song_queue:
                             next = song_queue.pop(0)
                             await asyncio.sleep(3)
-                            voice.play(next, after=lambda e: call_next(e))
+
+                            now_playing = f"{next[1]}"
+                            embed = discord.Embed(title="Tocando agora", description=now_playing)
+                            await command.channel.send(embed=embed)
+
+                            voice.play(next[0], after=lambda e: call_next(e))
                         else:
                             await command.channel.send("Sem músicas na fila")
 
+                    # iniciando fila de musica
                     if not voice.is_playing():
-                        voice.play(song_queue[0], after=lambda e: call_next(e))
+                        now_playing = f"{song_queue[0][1]}"
+                        embed = discord.Embed(title="Tocando agora", description=now_playing)
+                        await command.channel.send(embed=embed)
+                        voice.play(song_queue[0][0], after=lambda e: call_next(e))
                 else:
                     await command.channel.send("Você precisa estar em um canal de voz!")
 
@@ -107,7 +115,7 @@ class MyClient(discord.Client):
 
                     for track in queue:
                         i += 1
-                        queue_list += f"{i} - {track[0]}\n"
+                        queue_list += f"{i} - {track}\n"
 
                     embed = discord.Embed(title="Fila", description=queue_list)
                     embed.description = queue_list
