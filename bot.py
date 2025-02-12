@@ -1,12 +1,11 @@
 import asyncio
 import os
-import time
 import discord
 
 from dotenv import load_dotenv
 from yt_dlp import YoutubeDL
-from discord import app_commands, FFmpegPCMAudio
-from discord.ext import commands
+from discord import FFmpegPCMAudio
+from pytube import Search
 
 # --------------
 
@@ -36,19 +35,39 @@ class MyClient(discord.Client):
                     else:                                      # se o bot ja estiver no canal
                         voice = command.guild.voice_client  
 
-                    # tocando musica
-
+                    # configuracoes
                     ydl_opts = {
-                        "format": "bestaudio"
+                        "quiet": True,
+                        "format": "bestaudio",
+                        # "extract_flat": True,
+                        # "noplaylist": True,
+                        # 'force_generic_extractor': True,
                     }
 
-                    with YoutubeDL(ydl_opts) as ydl:
-                        info = ydl.extract_info(url, download=False)
-                        audio_url = info["url"]
-                        title = info["title"]
-                        duration = info["duration"]
+                    FFMPEG_OPTIONS = {
+                        'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+                        'options': '-vn',  # Não pega vídeo, apenas áudio
+                    }
 
-                    source = FFmpegPCMAudio(audio_url)
+                    # tocando musica
+                    if url.startswith("https"):
+                        with YoutubeDL(ydl_opts) as ydl:
+                            info = ydl.extract_info(url, download=False)
+                            audio_url = info["url"]
+                            title = info["title"]
+                            duration = info["duration"]
+                    else:
+                        search = Search(url)
+                        results = search.results
+                        first = results[0]
+
+                        with YoutubeDL(ydl_opts) as ydl:
+                            info = ydl.extract_info(first.watch_url, download=False)
+                            audio_url = info["url"]
+                            title = info["title"]
+                            duration = info["duration"]
+
+                    source = FFmpegPCMAudio(audio_url, **FFMPEG_OPTIONS)
                     queue.append([title, duration])
                     song_queue.append(source)
 
@@ -83,7 +102,16 @@ class MyClient(discord.Client):
 
             elif "queue" in command_content:
                 if command.guild.voice_client and len(queue) > 0:
-                    await command.channel.send(queue)
+                    queue_list = ""
+                    i = 0
+
+                    for track in queue:
+                        i += 1
+                        queue_list += f"{i} - {track[0]}\n"
+
+                    embed = discord.Embed(title="Fila", description=queue_list)
+                    embed.description = queue_list
+                    await command.channel.send(embed=embed)
                 elif command.guild.voice_client and queue <= 0:
                     await command.channel.send("Sem músicas na fila.")
 
