@@ -29,7 +29,7 @@ E, se ainda estiver interessado em testar o bot, basta seguir as instruções **
 
 - Ao entrar no diretório deste repositório pelo prompt, use o comando **python -m venv venv** para criar um ambiente virtual, e use **.\venv\Scripts\activate** para ativar o ambiente.
 
-- instale as dependências do código com **pip freeze -r requirements.txt**
+- instale as dependências do código com **pip install -r requirements.txt**
 
 - Caso ainda não tenha instalado, é necessário instalar o **FFmpeg** em <a href="https://ffmpeg.org/download.html">https://ffmpeg.org/download.html</a>. **obs:** Tem que adicionar o FFmpeg ao PATH -> Vai em **Configurações do sistema** e depois em **Variáveis de ambiente**. Em **Variáveis do sistema**, edite PATH e adicione o caminho da pasta **bin** que está no diretório do FFmpeg **(exemplo: C:\ffmpeg\bin)**.
 
